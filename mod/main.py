@@ -19,12 +19,29 @@ import FreeCADGui
 from PySide import QtGui, QtCore
 
 from mod.translation_tools import __
-from mod.freecad_tools import check_compatibility, document_count, prompt_close_all_documents, get_fc_main_window, get_fc_object
-from mod.freecad_tools import delete_existing_docks, valid_document_environment, enforce_case_limits_restrictions, enforce_fillbox_restrictions
+from mod.freecad_tools import (
+    check_compatibility,
+    document_count,
+    prompt_close_all_documents,
+    get_fc_main_window,
+    get_fc_object,
+)
+from mod.freecad_tools import (
+    delete_existing_docks,
+    valid_document_environment,
+    enforce_case_limits_restrictions,
+    enforce_fillbox_restrictions,
+)
 from mod.dialog_tools import info_dialog
 from mod.stdout_tools import print_license, log, debug
 
-from mod.constants import APP_NAME, VERSION, DEFAULT_WORKBENCH, DIVIDER, GITHUB_MASTER_CONSTANTS_URL
+from mod.constants import (
+    APP_NAME,
+    VERSION,
+    DEFAULT_WORKBENCH,
+    DIVIDER,
+    GITHUB_MASTER_CONSTANTS_URL,
+)
 
 from mod.dataobjects.case import Case
 from mod.dataobjects.application_settings import ApplicationSettings
@@ -32,9 +49,21 @@ from mod.dataobjects.application_settings import ApplicationSettings
 from mod.widgets.dock.designsphysics_dock import DesignSPHysicsDock
 from mod.widgets.properties_dock_widget import PropertiesDockWidget
 
+import ptvsd
+
+print("Waiting for debugger attach")
+# 5678 is the default attach port in the VS Code debug configurations
+ptvsd.enable_attach(address=("localhost", 5678), redirect_output=True)
+ptvsd.wait_for_attach()
+
 __author__ = "Andrés Vieira"
 __copyright__ = "Copyright 2016-2019, DualSHPysics Team"
-__credits__ = ["Andrés Vieira", "Lorena Docasar", "Alejandro Jacobo Cabrera Crespo", "Orlando García Feal"]
+__credits__ = [
+    "Andrés Vieira",
+    "Lorena Docasar",
+    "Alejandro Jacobo Cabrera Crespo",
+    "Orlando García Feal",
+]
 __license__ = "GPL"
 __version__ = VERSION
 __maintainer__ = "Andrés Vieira"
@@ -43,7 +72,7 @@ __status__ = "Development"
 
 
 def on_tree_item_selection_change(properties_widget, designsphysics_dock):
-    """ Refreshes relevant parts of DesignsPHysics under an important change event. """
+    """Refreshes relevant parts of DesignsPHysics under an important change event."""
     debug("Syncronizing FreeCAD data structures with DesignSPHysics")
     selection = FreeCADGui.Selection.getSelection()
     properties_widget.set_add_button_enabled(True)
@@ -61,7 +90,9 @@ def on_tree_item_selection_change(properties_widget, designsphysics_dock):
             elif Case.the().is_object_in_simulation(selection[0].Name):
                 # Show properties on table
                 properties_widget.configure_to_regular_selection()
-                properties_widget.adapt_to_simulation_object(Case.the().get_simulation_object(selection[0].Name), selection[0])
+                properties_widget.adapt_to_simulation_object(
+                    Case.the().get_simulation_object(selection[0].Name), selection[0]
+                )
             else:
                 if not selection[0].InList:
                     # Show button to add to simulation
@@ -77,7 +108,9 @@ def on_tree_item_selection_change(properties_widget, designsphysics_dock):
         if not fc_object or fc_object.InList:
             Case.the().remove_object(object_name)
 
-    for damping_to_delete in list(filter(lambda x: not get_fc_object(x), Case.the().damping_zones)):
+    for damping_to_delete in list(
+        filter(lambda x: not get_fc_object(x), Case.the().damping_zones)
+    ):
         Case.the().remove_damping_zone(damping_to_delete)
 
     # Update dsph objects list
@@ -86,7 +119,7 @@ def on_tree_item_selection_change(properties_widget, designsphysics_dock):
 
 
 def selection_monitor(properties_widget, designsphysics_dock):
-    """ Watches and fixes unwanted changes in the current selection. """
+    """Watches and fixes unwanted changes in the current selection."""
     time.sleep(2.0)
     while True:
         try:
@@ -107,7 +140,9 @@ def selection_monitor(properties_widget, designsphysics_dock):
                 if FreeCAD.ActiveDocument:
                     damping_group = FreeCAD.ActiveDocument.getObject(name)
                     if len(damping_group.OutList) == 2:
-                        damping_zone.overlimit = damping_group.OutList[1].Length.Value / DIVIDER
+                        damping_zone.overlimit = (
+                            damping_group.OutList[1].Length.Value / DIVIDER
+                        )
 
             time.sleep(0.5)
         except AttributeError:
@@ -115,16 +150,27 @@ def selection_monitor(properties_widget, designsphysics_dock):
 
 
 def boot():
-    """ Boots the application. """
+    """Boots the application."""
     print_license()
     check_compatibility()
 
     try:
-        master_branch_version = str(urlopen(GITHUB_MASTER_CONSTANTS_URL).read()).split("VERSION = \"")[-1].split("\"")[0]
-        if VERSION < master_branch_version and ApplicationSettings.the().notify_on_outdated_version_enabled:
+        master_branch_version = (
+            str(urlopen(GITHUB_MASTER_CONSTANTS_URL).read())
+            .split('VERSION = "')[-1]
+            .split('"')[0]
+        )
+        if (
+            VERSION < master_branch_version
+            and ApplicationSettings.the().notify_on_outdated_version_enabled
+        ):
             info_dialog(
-                __("Your version of DesignSPHyiscs is outdated. Please go to the Addon Manager and update it. New versions include bug fixes, new features and new DualSPHysics executables, among other things."),
-                __("The version you're using is {} while the version that you can update to is {}").format(VERSION, master_branch_version)
+                __(
+                    "Your version of DesignSPHyiscs is outdated. Please go to the Addon Manager and update it. New versions include bug fixes, new features and new DualSPHysics executables, among other things."
+                ),
+                __(
+                    "The version you're using is {} while the version that you can update to is {}"
+                ).format(VERSION, master_branch_version),
             )
     except URLError:
         log("No network connection or Git repo is down. Skipping version check.")
@@ -132,7 +178,9 @@ def boot():
     if document_count() > 0:
         success = prompt_close_all_documents()
         if not success:
-            debug("User chose not to close the currently opened documents. Aborting startup")
+            debug(
+                "User chose not to close the currently opened documents. Aborting startup"
+            )
             quit()
 
     # Tries to delete docks created by a previous execution of DesignSPHysics
@@ -141,20 +189,44 @@ def boot():
     designsphysics_dock = DesignSPHysicsDock(get_fc_main_window())
     properties_widget = PropertiesDockWidget(parent=get_fc_main_window())
 
-    get_fc_main_window().addDockWidget(QtCore.Qt.RightDockWidgetArea, designsphysics_dock)
+    get_fc_main_window().addDockWidget(
+        QtCore.Qt.RightDockWidgetArea, designsphysics_dock
+    )
     get_fc_main_window().addDockWidget(QtCore.Qt.LeftDockWidgetArea, properties_widget)
 
     # Subscribe the FreeCAD Objects tree to the item selection change function.
     # This helps FreeCAD notify DesignSPHysics for the deleted and changed objects to get updated correctly.
-    fc_object_tree: QtGui.QTreeWidget = get_fc_main_window().findChildren(QtGui.QSplitter)[0].findChildren(QtGui.QTreeWidget)[0]
-    fc_object_tree.itemSelectionChanged.connect(lambda p=properties_widget, d=designsphysics_dock: on_tree_item_selection_change(p, d))
-    debug("Subscribing selection change monitor handler to freecad object tree item changed.")
+    fc_object_tree: QtGui.QTreeWidget = (
+        get_fc_main_window()
+        .findChildren(QtGui.QSplitter)[0]
+        .findChildren(QtGui.QTreeWidget)[0]
+    )
+    fc_object_tree.itemSelectionChanged.connect(
+        lambda p=properties_widget, d=designsphysics_dock: on_tree_item_selection_change(
+            p, d
+        )
+    )
+    debug(
+        "Subscribing selection change monitor handler to freecad object tree item changed."
+    )
 
-    properties_widget.need_refresh.connect(lambda p=properties_widget, d=designsphysics_dock: on_tree_item_selection_change(p, d))
-    designsphysics_dock.need_refresh.connect(lambda p=properties_widget, d=designsphysics_dock: on_tree_item_selection_change(p, d))
+    properties_widget.need_refresh.connect(
+        lambda p=properties_widget, d=designsphysics_dock: on_tree_item_selection_change(
+            p, d
+        )
+    )
+    designsphysics_dock.need_refresh.connect(
+        lambda p=properties_widget, d=designsphysics_dock: on_tree_item_selection_change(
+            p, d
+        )
+    )
 
     # Launch a monitor thread that ensures some things are not changed.
-    monitor_thread = threading.Thread(target=lambda p=properties_widget, d=designsphysics_dock: selection_monitor(p, d))
+    monitor_thread = threading.Thread(
+        target=lambda p=properties_widget, d=designsphysics_dock: selection_monitor(
+            p, d
+        )
+    )
     monitor_thread.start()
 
     FreeCADGui.activateWorkbench(DEFAULT_WORKBENCH)
