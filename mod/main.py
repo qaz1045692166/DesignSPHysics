@@ -49,20 +49,11 @@ from mod.dataobjects.application_settings import ApplicationSettings
 from mod.widgets.dock.designsphysics_dock import DesignSPHysicsDock
 from mod.widgets.properties_dock_widget import PropertiesDockWidget
 
-<<<<<<< HEAD
-import ptvsd
-
-print("Waiting for debugger attach")
-# 5678 is the default attach port in the VS Code debug configurations
-ptvsd.enable_attach(address=("localhost", 5678), redirect_output=True)
-ptvsd.wait_for_attach()
-=======
 # import ptvsd
 # print("Waiting for debugger attach")
 # # 5678 is the default attach port in the VS Code debug configurations
 # ptvsd.enable_attach(address=('localhost', 5678), redirect_output=True)
 # ptvsd.wait_for_attach()
->>>>>>> 6417129dd699c504eb3b2a7ade87c5fa5e02d10b
 
 __author__ = "Andrés Vieira"
 __copyright__ = "Copyright 2016-2019, DualSHPysics Team"
